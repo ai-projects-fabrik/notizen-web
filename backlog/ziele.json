@@ -1,0 +1,27 @@
+[
+  {
+    "id": "notizen-speicher",
+    "titel": "Notizen-Speicher (Modul speicher)",
+    "freigegeben": true,
+    "abhaengig_von": [],
+    "text": "**Datei:** `src/projekt/speicher.py` `tests/test_speicher.py`\n**Akzeptanztest:** `tests/akzeptanz/test_speicher.py`\n\nNeues Modul `projekt.speicher`: Notizen im Arbeitsspeicher.\n\n**Modulvertrag:** `class NotizSpeicher` mit `anlegen(titel: str, text: str) -> dict`, `holen(id: int) -> dict`, `liste() -> list[dict]`, `loeschen(id: int) -> None`. Notiz = `{\"id\": int, \"titel\": str, \"text\": str}`.\n\n**Regeln**\n- Ids laufen ab 1 fortlaufend und werden nach dem Loeschen nicht wiederverwendet.\n- Titel wird getrimmt, 1 bis 80 Zeichen; Text 0 bis 2000 Zeichen; beide muessen `str` sein, sonst `ValueError` (keine Id verbraucht).\n- `holen`/`loeschen` einer unbekannten Id: `KeyError`. Rueckgaben sind Kopien.\n\n**Acceptance Criteria**\n- Beispiele wortgleich in `tests/akzeptanz/test_speicher.py` (Mensch-gemergt, nicht aendern).\n- Eigene Tests in `tests/test_speicher.py` decken zusaetzlich Grenzwerte 80/2000 und Kopie-Verhalten ab.\n"
+  },
+  {
+    "id": "notizen-app",
+    "titel": "WSGI-App (Modul app)",
+    "freigegeben": true,
+    "abhaengig_von": [
+      "notizen-speicher"
+    ],
+    "text": "**Datei:** `src/projekt/app.py` `tests/test_app.py`\n**Akzeptanztest:** `tests/akzeptanz/test_app.py`\n\nNeues Modul `projekt.app`: JSON-Schnittstelle als WSGI-App ohne Fremdpakete.\n\n**Modulvertrag:** `erzeuge_app(speicher: NotizSpeicher | None = None)` liefert ein WSGI-Callable; ohne Argument ein neuer eigener `NotizSpeicher` (kein gemeinsamer Zustand). Nur oeffentliche Namen aus `projekt.speicher` nutzen.\n\n**Regeln**\n- `GET /health` -> 200 `{\"status\": \"ok\"}`; `POST /notizen` (JSON `{titel, text}`) -> 201 mit der Notiz; `GET /notizen` -> 200 Liste; `GET /notizen/<id>` -> 200 oder 404; `DELETE /notizen/<id>` -> 204 ohne Body oder 404.\n- Alle Antworten ausser 204 sind `application/json`; Fehler als `{\"fehler\": \"<Text>\"}`.\n- Leerer, kaputter oder ungueltiger Body (`ValueError`, kein JSON-Objekt, fehlende Felder) -> 400; unbekannter Pfad oder nicht numerische Id -> 404; bekannter Pfad mit falscher Methode -> 405.\n\n**Acceptance Criteria**\n- Beispiele wortgleich in `tests/akzeptanz/test_app.py` (Mensch-gemergt, nicht aendern).\n- Eigene Tests in `tests/test_app.py` rufen die App direkt per WSGI auf (kein Netzwerk, kein Port).\n"
+  },
+  {
+    "id": "notizen-cli",
+    "titel": "Kommandozeile und Selbsttest (Modul cli)",
+    "freigegeben": true,
+    "abhaengig_von": [
+      "notizen-app"
+    ],
+    "text": "**Datei:** `src/projekt/cli.py` `tests/test_cli.py`\n**Akzeptanztest:** `tests/akzeptanz/test_cli.py`\n\nNeues Modul `projekt.cli`: Server starten und eingebauter Selbsttest.\n\n**Modulvertrag:** `main(argv: list[str] | None = None) -> int`; Aufruf auch per `python -m projekt.cli` (Block `if __name__ == \"__main__\"`). Nur oeffentliche Namen aus `projekt.app` nutzen.\n\n**Regeln**\n- `--selbsttest`: legt in-process (ohne Netzwerk) per `erzeuge_app` eine Notiz an, liest sie, listet, loescht, prueft `/health`; bei Erfolg Zeile `Selbsttest OK` auf stdout und Rueckgabe 0, sonst 1.\n- Ohne `--selbsttest`: `wsgiref.simple_server` auf `--host` (Standard 127.0.0.1) und `--port` (Standard 8000, 1 bis 65535) starten; ungueltiger Port oder unbekannte Option: Meldung auf stderr und Rueckgabe 2, keine Ausnahme.\n\n**Acceptance Criteria**\n- Beispiele wortgleich in `tests/akzeptanz/test_cli.py` (Mensch-gemergt, nicht aendern).\n- Eigene Tests in `tests/test_cli.py` starten keinen echten Server.\n"
+  }
+]
