@@ -4,6 +4,7 @@ on:
   issues:
     types: [labeled]
     names: [agent]
+  bots: ["ai-projects-fabrik-agent[bot]"]
 permissions:
   contents: read
   issues: read
